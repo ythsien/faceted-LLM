@@ -20,6 +20,19 @@
 # production
 /build
 
+# IDEs and editors
+/.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+/.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
 # misc
 .DS_Store
 *.pem
