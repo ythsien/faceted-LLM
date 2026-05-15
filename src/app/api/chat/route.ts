@@ -11,28 +11,23 @@ export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      console.error('API Route: GEMINI_API_KEY is missing');
       return NextResponse.json(
-        { error: 'Gemini API Key not configured in .env.local' },
+        { error: 'Gemini API Key not configured' },
         { status: 500 }
       );
     }
 
-    // Gemini API expects 'user' and 'model' roles.
     const contents = messages.map((m: ChatMessage) => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }],
     }));
 
-    console.log('API Route: Sending request to Gemini...');
-
+    // Using the v1beta streamGenerateContent endpoint
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
           generationConfig: {
@@ -43,31 +38,68 @@ export async function POST(req: Request) {
       }
     );
 
-    const data = await response.json();
-
     if (!response.ok) {
-      console.error('Gemini API Error Response:', data);
+      const errorData = await response.json();
       return NextResponse.json(
-        { error: data.error?.message || 'Gemini API error', details: data },
+        { error: errorData.error?.message || 'Gemini API error' },
         { status: response.status }
       );
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Set up a transform stream to parse the SSE events from Gemini
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    if (!text) {
-      console.error('Gemini API: Empty response', data);
-      return NextResponse.json(
-        { error: 'AI returned an empty response', details: data },
-        { status: 500 }
-      );
-    }
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body?.getReader();
+        if (!reader) {
+          controller.close();
+          return;
+        }
 
-    return NextResponse.json({ text });
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Gemini SSE sends blocks of JSON. We need to find valid JSON objects.
+          // In 'alt=sse' mode, each event starts with "data: "
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // keep the last partial line in the buffer
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+            const jsonStr = trimmed.replace('data: ', '');
+            try {
+              const json = JSON.parse(jsonStr);
+              const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) {
+                controller.enqueue(encoder.encode(text));
+              }
+            } catch (e) {
+              console.error('Error parsing streaming JSON:', e);
+            }
+          }
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : 'Internal Server Error';
-    console.error('API Route Catch Error:', error);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

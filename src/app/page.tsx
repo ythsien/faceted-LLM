@@ -11,7 +11,7 @@ const prototypes = [
 
 export default function StartPage() {
   return (
-    <div className="bg-white min-h-screen w-full relative flex flex-col items-center pt-[70px] font-manrope">
+    <div className="bg-white min-h-screen w-full relative flex flex-col items-center pt-[70px] pb-[70px] font-manrope">
       <h1 className="font-bold text-[32px] text-black opacity-70 mb-12">
         Prototypes
       </h1>
@@ -21,7 +21,7 @@ export default function StartPage() {
           <Link
             key={proto.id}
             href={proto.path}
-            className="group relative bg-gradient-to-b border border-[#ededed] border-solid flex flex-col items-start justify-end p-[20px] rounded-[20px] size-[300px] transition-all hover:shadow-lg hover:-translate-y-1"
+            className="group relative bg-gradient-to-b border border-[#ededed] border-solid flex flex-col items-start justify-end p-[20px] rounded-[20px] size-[300px] transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
             style={{
               backgroundImage: `linear-gradient(to bottom, ${proto.color}, white)`,
             }}

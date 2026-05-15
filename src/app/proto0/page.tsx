@@ -15,10 +15,11 @@ export default function Proto0Page() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand textarea as user types
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -26,10 +27,12 @@ export default function Proto0Page() {
     }
   }, [input]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (isChatting) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'user' || isLoading) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   }, [messages, isLoading, isChatting]);
 
@@ -44,6 +47,7 @@ export default function Proto0Page() {
     setInput('');
     setIsChatting(true);
     setIsLoading(true);
+    setIsFocused(false);
 
     try {
       const res = await fetch('/api/chat', {
@@ -52,31 +56,48 @@ export default function Proto0Page() {
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const errorData = await res.json();
         setMessages([
           ...newMessages,
           {
             role: 'assistant',
-            content: `Error: ${data.error || 'Something went wrong'}`,
+            content: `Error: ${errorData.error || 'Something went wrong'}`,
           },
         ]);
-      } else if (data.text) {
-        setMessages([
-          ...newMessages,
-          { role: 'assistant', content: data.text },
-        ]);
+        setIsLoading(false);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+
+      setMessages([...newMessages, { role: 'assistant', content: '' }]);
+      setIsLoading(false);
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          assistantContent += decoder.decode(value);
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: 'assistant',
+              content: assistantContent,
+            };
+            return updated;
+          });
+        }
       }
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error('Failed to send message:', error);
       setMessages([
         ...newMessages,
         { role: 'assistant', content: `Network Error: ${errorMessage}` },
       ]);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -88,26 +109,43 @@ export default function Proto0Page() {
     }
   };
 
+  const handleReset = () => {
+    setMessages([]);
+    setIsChatting(false);
+    setInput('');
+    setIsLoading(false);
+    setIsFocused(false);
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-white font-manrope">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-white z-10">
+    <div className="flex flex-col h-screen bg-white font-manrope relative">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to bottom, #E4E4E4 0%, #FFFFFF 30%)',
+        }}
+      />
+
+      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-white/50 backdrop-blur-md z-10">
         <Link
           href="/"
-          className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
+          className="text-sm font-medium text-gray-500 hover:text-black transition-colors cursor-pointer"
         >
           ← Back to Directory
         </Link>
-        <div className="text-sm font-semibold text-gray-400">
+        <div className="text-sm font-semibold text-gray-400 flex items-center gap-2">
           Prototype 0–Gray
         </div>
-        <div className="w-20" /> {/* Spacer */}
+        <button
+          onClick={handleReset}
+          className="text-sm font-medium text-gray-500 hover:text-black transition-colors px-3 py-1 rounded-full border border-gray-200 hover:border-gray-400 bg-white/50 cursor-pointer"
+        >
+          New Chat
+        </button>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto relative flex flex-col">
+      <main className="flex-1 overflow-y-auto relative flex flex-col z-0">
         {!isChatting ? (
-          /* Welcome Screen Layout */
           <div className="flex-1 flex flex-col items-center justify-center p-6">
             <h1 className="text-4xl font-bold text-black opacity-80 mb-12">
               What&apos;s on your mind?
@@ -120,11 +158,12 @@ export default function Proto0Page() {
                 handleSubmit={handleSubmit}
                 handleKeyDown={handleKeyDown}
                 isLoading={isLoading}
+                isFocused={isFocused}
+                setIsFocused={setIsFocused}
               />
             </div>
           </div>
         ) : (
-          /* Chat Interface Layout */
           <div className="flex-1 flex flex-col overflow-x-hidden">
             <div className="max-w-3xl w-full mx-auto p-6 space-y-8 pb-40">
               {messages.map((msg, i) => (
@@ -192,7 +231,6 @@ export default function Proto0Page() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Sticky Bottom Input */}
             <div className="fixed bottom-0 left-0 right-0 p-6 flex justify-center bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
               <div className="w-full max-w-3xl pointer-events-auto">
                 <PromptBox
@@ -202,6 +240,8 @@ export default function Proto0Page() {
                   handleSubmit={handleSubmit}
                   handleKeyDown={handleKeyDown}
                   isLoading={isLoading}
+                  isFocused={isFocused}
+                  setIsFocused={setIsFocused}
                 />
               </div>
             </div>
@@ -219,6 +259,8 @@ interface PromptBoxProps {
   handleSubmit: (e?: React.FormEvent) => void;
   handleKeyDown: (e: React.KeyboardEvent) => void;
   isLoading: boolean;
+  isFocused: boolean;
+  setIsFocused: (val: boolean) => void;
 }
 
 function PromptBox({
@@ -228,6 +270,8 @@ function PromptBox({
   handleSubmit,
   handleKeyDown,
   isLoading,
+  isFocused,
+  setIsFocused,
 }: PromptBoxProps) {
   return (
     <div className="relative w-full bg-white border border-gray-200 rounded-[28px] shadow-sm transition-all duration-300 ease-in-out hover:border-gray-300">
@@ -236,10 +280,14 @@ function PromptBox({
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           placeholder="Ask anything"
           rows={1}
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 ring-0 text-[16px] py-3 px-4 resize-none max-h-[300px] shadow-none appearance-none"
+          className={`w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 ring-0 text-[16px] py-3 px-4 resize-none max-h-[300px] shadow-none appearance-none transition-all duration-300 ${
+            isFocused ? 'cursor-text' : 'cursor-pointer'
+          }`}
           style={{ height: 'auto', minHeight: '48px' }}
         />
         <div
@@ -248,7 +296,7 @@ function PromptBox({
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors focus:outline-none"
+            className="p-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors focus:outline-none cursor-pointer"
           >
             <svg
               width="20"
