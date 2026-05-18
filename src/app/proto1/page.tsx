@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  apiContent?: string;
   facets?: Record<string, string>;
 }
 
@@ -90,22 +91,27 @@ export default function Proto1Page() {
     const displayMessage: Message = {
       role: 'user',
       content: input,
+      apiContent: hiddenPrompt,
       facets: { ...selectedFacets },
     };
 
-    const apiMessages = [
-      ...messages.map((m) => m),
-      { role: 'user', content: hiddenPrompt },
-    ];
     const newMessages = [...messages, displayMessage];
-
     setMessages(newMessages);
     setInput('');
     setIsChatting(true);
     setIsLoading(true);
     setIsFacetPanelOpen(false);
 
+    await performChat(newMessages);
+  };
+
+  const performChat = async (currentMessages: Message[]) => {
     try {
+      const apiMessages = currentMessages.map((m) => ({
+        role: m.role,
+        content: m.apiContent || m.content,
+      }));
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,8 +120,8 @@ export default function Proto1Page() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        setMessages([
-          ...newMessages,
+        setMessages((prev) => [
+          ...prev,
           {
             role: 'assistant',
             content: `Error: ${errorData.error || 'Something went wrong'}`,
@@ -129,7 +135,7 @@ export default function Proto1Page() {
       const decoder = new TextDecoder();
       let assistantContent = '';
 
-      setMessages([...newMessages, { role: 'assistant', content: '' }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
       setIsLoading(false);
 
       if (reader) {
@@ -150,12 +156,32 @@ export default function Proto1Page() {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      setMessages([
-        ...newMessages,
+      setMessages((prev) => [
+        ...prev,
         { role: 'assistant', content: `Network Error: ${errorMessage}` },
       ]);
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = async () => {
+    if (isLoading || messages.length === 0) return;
+
+    let lastUserIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        lastUserIndex = i;
+        break;
+      }
+    }
+
+    if (lastUserIndex === -1) return;
+
+    const historyToRetry = messages.slice(0, lastUserIndex + 1);
+    setMessages(historyToRetry);
+    setIsLoading(true);
+
+    await performChat(historyToRetry);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -323,12 +349,35 @@ export default function Proto1Page() {
                       </ReactMarkdown>
                     )}
                   </div>
+                  {msg.role === 'assistant' &&
+                    i === messages.length - 1 &&
+                    !isLoading && (
+                      <button
+                        onClick={handleRetry}
+                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-black transition-colors mt-2 ml-1"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                          <path d="M21 3v5h-5" />
+                        </svg>
+                        Retry
+                      </button>
+                    )}
                 </div>
               ))}
               {isLoading && (
                 <div className="flex items-start">
                   <div className="animate-pulse text-gray-400 text-sm italic">
-                    Gemini is thinking...
+                    Thinking...
                   </div>
                 </div>
               )}
