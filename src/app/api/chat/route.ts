@@ -22,16 +22,16 @@ export async function POST(req: Request) {
       parts: [{ text: m.content }],
     }));
 
-    // Using the v1beta streamGenerateContent endpoint
+    // Using the v1beta streamGenerateContent endpoint with the more stable 1.5-flash model
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse&key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
           generationConfig: {
-            maxOutputTokens: 2048,
+            maxOutputTokens: 4096,
             temperature: 0.7,
           },
         }),

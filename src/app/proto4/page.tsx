@@ -234,7 +234,8 @@ export default function Proto4Page() {
     const constraints = Object.entries(selectedFacets)
       .map(([k, v]) => `${k}: ${v}`)
       .join(', ');
-    const enhancedApiContent = `${lastUserMsg.content}\n\nConstraints: ${constraints}`;
+
+    const enhancedApiContent = `[SYSTEM: The user has refined their request. Please provide a new, complete response that fulfills the original prompt but STRICTLY ADHERES to these new constraints: ${constraints}]\n\nOriginal prompt: ${lastUserMsg.content}`;
 
     const updatedHistory = [
       ...messages.slice(0, index - 1),
