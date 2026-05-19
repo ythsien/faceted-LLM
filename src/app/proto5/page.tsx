@@ -280,8 +280,9 @@ export default function Proto5Page() {
 
     setMessages((prev) => {
       const updated = [...prev];
+      const existingMsg = updated[index];
       updated[index] = {
-        role: 'assistant',
+        ...existingMsg,
         content: '',
         isEnhanced: true,
         appliedFacets: { ...selectedFacets },
