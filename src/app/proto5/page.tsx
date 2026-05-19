@@ -198,15 +198,15 @@ export default function Proto5Page() {
           if (!firstTokenReceived && chunk.trim()) {
             firstTokenReceived = true;
             // After first token, trigger facets for this TURN (multi-turn)
-            setMessages((prev) => {
-              const finalHistory = [...prev];
-              const lastIdx =
-                isRegeneration && targetIndex !== undefined
-                  ? targetIndex
-                  : finalHistory.length - 1;
-              generateFacets(lastIdx, finalHistory);
-              return finalHistory;
-            });
+            // But NOT if we are just regenerating an existing turn
+            if (!isRegeneration) {
+              setMessages((prev) => {
+                const finalHistory = [...prev];
+                const lastIdx = finalHistory.length - 1;
+                generateFacets(lastIdx, finalHistory);
+                return finalHistory;
+              });
+            }
           }
 
           setMessages((prev) => {
