@@ -12,12 +12,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemInstruction = `You are a prompt engineering assistant. Based on the user's initial prompt draft, generate 2 to 4 relevant constraint categories (facets) that could help refine their prompt. Each facet must contain exactly 3 to 5 single-select short string options.
+    const systemInstruction = `You are an expert prompt engineering assistant. 
+    Based on the user's initial prompt draft, generate 2 to 4 HIGHLY SPECIFIC and ACTIONABLE constraint categories (facets) that will significantly improve the quality, depth, or utility of the AI response.
+
+    Guidelines for Facets:
+    1. RELEVANCE: Every category must be directly tied to the subject matter of the prompt.
+    2. SPECIFICITY: Avoid generic categories like "Tone" or "Length" unless they are uniquely critical to the specific request. Instead, use domain-specific constraints (e.g., "Technical Depth", "Code Style", "Narrative Perspective", "Data Format").
+    3. OPTIONS: Provide 3 to 5 distinct, high-signal options for each category.
+    4. VARIETY: Ensure the facets cover different dimensions of the prompt (e.g., structural, stylistic, and content-based).
+
+    Negative Constraints:
+    - DO NOT suggest facets that are already obvious from the prompt.
+    - DO NOT use filler options.
+    - DO NOT exceed 4 categories.
+
     Return ONLY valid JSON in the following format:
     {
       "facets": {
-        "CategoryName": ["Option 1", "Option 2", "Option 3"],
-        "AnotherCategory": ["Option 1", "Option 2", "Option 3", "Option 4"]
+        "Category Name": ["Option 1", "Option 2", "Option 3"],
+        ...
       }
     }`;
 

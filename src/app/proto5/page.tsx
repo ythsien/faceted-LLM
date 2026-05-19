@@ -460,21 +460,20 @@ export default function Proto5Page() {
                                 )
                               )}
                             </div>
-                            {/* Only show "Update response" for the VERY LATEST assistant message to keep UI simple */}
-                            {i === messages.length - 1 && (
-                              <button
-                                disabled={
-                                  isLoading ||
-                                  Object.keys(selectedFacets).length === 0 ||
-                                  JSON.stringify(selectedFacets) ===
-                                    JSON.stringify(msg.appliedFacets)
-                                }
-                                onClick={() => handleUpdateResponse(i)}
-                                className="w-full py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:bg-gray-800 disabled:bg-gray-200 transition-colors cursor-pointer"
-                              >
-                                Update response
-                              </button>
-                            )}
+                            {/* Show "Update response" for all assistant messages but disable for previous turns */}
+                            <button
+                              disabled={
+                                isLoading ||
+                                i !== messages.length - 1 ||
+                                Object.keys(selectedFacets).length === 0 ||
+                                JSON.stringify(selectedFacets) ===
+                                  JSON.stringify(msg.appliedFacets)
+                              }
+                              onClick={() => handleUpdateResponse(i)}
+                              className="w-full py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:bg-gray-800 disabled:bg-gray-200 transition-colors cursor-pointer"
+                            >
+                              Update response
+                            </button>{' '}
                           </div>
                         ) : null}
                       </div>

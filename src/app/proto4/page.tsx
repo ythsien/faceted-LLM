@@ -430,6 +430,7 @@ export default function Proto4Page() {
                             <button
                               disabled={
                                 isLoading ||
+                                i !== messages.length - 1 ||
                                 Object.keys(selectedFacets).length === 0 ||
                                 JSON.stringify(selectedFacets) ===
                                   JSON.stringify(msg.appliedFacets)
