@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     Guidelines for Facets:
     1. RELEVANCE: Every category must be directly tied to the subject matter of the prompt.
     2. SPECIFICITY: Avoid generic categories like "Tone" or "Length" unless they are uniquely critical to the specific request. Instead, use domain-specific constraints (e.g., "Technical Depth", "Code Style", "Narrative Perspective", "Data Format").
-    3. OPTIONS: Provide 3 to 5 distinct, high-signal options for each category.
+    3. OPTIONS: Provide 3 to 5 distinct, high-signal options for each category. Keep each option VERY CONCISE (1-3 words max).
     4. VARIETY: Ensure the facets cover different dimensions of the prompt (e.g., structural, stylistic, and content-based).
 
     Negative Constraints:

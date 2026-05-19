@@ -159,10 +159,20 @@ export default function Proto4Page() {
       }
 
       if (reader) {
+        let firstTokenReceived = false;
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           const chunk = decoder.decode(value);
+
+          if (!firstTokenReceived && chunk.trim()) {
+            firstTokenReceived = true;
+            // After first token, trigger facets
+            if (!isRegeneration && currentMessages.length === 1) {
+              generateFacets(currentMessages[0].content);
+            }
+          }
+
           setMessages((prev) => {
             const updated = [...prev];
             const idx =
@@ -180,11 +190,6 @@ export default function Proto4Page() {
       }
 
       setIsLoading(false);
-
-      // After first turn completion, trigger facets
-      if (!isRegeneration && currentMessages.length === 1) {
-        generateFacets(currentMessages[0].content);
-      }
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -377,9 +382,25 @@ export default function Proto4Page() {
                       {/* Facet Refinement Panel - Positioned to the left of the max-w-3xl column */}
                       <div className="absolute right-full mr-8 top-0 hidden lg:block">
                         {isGeneratingFacets ? (
-                          <div className="w-[240px] flex items-center gap-3 text-sm text-gray-500 py-2 italic animate-in fade-in duration-500">
-                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-gray-400"></div>
-                            <span>Suggesting enhancements...</span>
+                          <div className="w-[240px] bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-pulse">
+                            <div className="flex items-center gap-3">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                              <span className="text-[11px] font-bold text-black tracking-tight uppercase">
+                                Analyzing context...
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-4">
+                              <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
+                              <div className="flex gap-1.5">
+                                <div className="h-6 bg-gray-200 rounded-xl w-16"></div>
+                                <div className="h-6 bg-gray-200 rounded-xl w-20"></div>
+                              </div>
+                              <div className="h-3 bg-gray-200 rounded-full w-2/3"></div>
+                              <div className="flex gap-1.5">
+                                <div className="h-6 bg-gray-200 rounded-xl w-24"></div>
+                                <div className="h-6 bg-gray-200 rounded-xl w-14"></div>
+                              </div>
+                            </div>
                           </div>
                         ) : generatedFacets ? (
                           <div className="w-[240px] bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-700">

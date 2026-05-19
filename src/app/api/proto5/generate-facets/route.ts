@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     1. CONTEXTUAL AWARENESS: Facets must account for what has already been discussed. Do not repeat constraints that are already established or obvious.
     2. DEPTH & EXPLORATION: Suggest categories that push the conversation further (e.g., "Counter-arguments to explore", "Specific edge cases", "Implementation strategy", "Output Visualization").
     3. DOMAIN SPECIFICITY: Use terminology relevant to the current topic (e.g., if discussing law, use "Jurisdiction" or "Statutory Context"; if discussing code, use "Error Handling" or "Performance Optimization").
-    4. ACTIONABLE OPTIONS: Provide 3 to 5 distinct options that would result in noticeably different AI responses.
+    4. ACTIONABLE OPTIONS: Provide 3 to 5 distinct options that would result in noticeably different AI responses. Keep each option VERY CONCISE (1-3 words max).
 
     Negative Constraints:
     - DO NOT use generic categories like "Tone", "Format", or "Length" unless the user's latest prompt specifically asks for stylistic adjustment.
