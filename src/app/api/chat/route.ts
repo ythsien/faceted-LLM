@@ -22,9 +22,9 @@ export async function POST(req: Request) {
       parts: [{ text: m.content }],
     }));
 
-    // Using the v1beta streamGenerateContent endpoint with the current Gemini 3.5 Flash model
+    // Using the v1beta streamGenerateContent endpoint with the gemini-3.1-flash-lite model
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
