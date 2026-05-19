@@ -105,7 +105,7 @@ export default function Proto1Page() {
     await performChat(newMessages);
   };
 
-  const performChat = async (currentMessages: Message[]) => {
+  const performChat = async (currentMessages: Message[], attempts = 0) => {
     try {
       const apiMessages = currentMessages.map((m) => ({
         role: m.role,
@@ -119,6 +119,14 @@ export default function Proto1Page() {
       });
 
       if (!res.ok) {
+        if (res.status === 503 && attempts < 2) {
+          console.log(
+            `Retrying chat due to 503 error (attempt ${attempts + 1})...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          return performChat(currentMessages, attempts + 1);
+        }
+
         const errorData = await res.json();
         setMessages((prev) => [
           ...prev,
@@ -133,7 +141,6 @@ export default function Proto1Page() {
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
-      let assistantContent = '';
 
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
       setIsLoading(false);
@@ -142,12 +149,13 @@ export default function Proto1Page() {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          assistantContent += decoder.decode(value);
+          const chunk = decoder.decode(value);
           setMessages((prev) => {
             const updated = [...prev];
+            const last = updated[updated.length - 1];
             updated[updated.length - 1] = {
-              role: 'assistant',
-              content: assistantContent,
+              ...last,
+              content: last.content + chunk,
             };
             return updated;
           });
