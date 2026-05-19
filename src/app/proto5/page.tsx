@@ -187,7 +187,6 @@ export default function Proto5Page() {
       if (!isRegeneration) {
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
       }
-      setIsLoading(false);
 
       if (reader) {
         while (true) {
@@ -209,6 +208,8 @@ export default function Proto5Page() {
           });
         }
       }
+
+      setIsLoading(false);
 
       // After completion, trigger facets for this TURN (multi-turn)
       setMessages((prev) => {
@@ -558,7 +559,7 @@ export default function Proto5Page() {
                   )}
                 </div>
               ))}
-              {isLoading && messages[messages.length - 1]?.role === 'user' && (
+              {isLoading && (
                 <div className="flex items-start">
                   <div className="animate-pulse text-gray-400 text-sm italic">
                     Thinking...

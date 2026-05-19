@@ -157,7 +157,6 @@ export default function Proto4Page() {
       if (!isRegeneration) {
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
       }
-      setIsLoading(false);
 
       if (reader) {
         while (true) {
@@ -179,6 +178,8 @@ export default function Proto4Page() {
           });
         }
       }
+
+      setIsLoading(false);
 
       // After first turn completion, trigger facets
       if (!isRegeneration && currentMessages.length === 1) {
@@ -522,7 +523,7 @@ export default function Proto4Page() {
                   )}
                 </div>
               ))}
-              {isLoading && messages[messages.length - 1]?.role === 'user' && (
+              {isLoading && (
                 <div className="flex items-start">
                   <div className="animate-pulse text-gray-400 text-sm italic">
                     Thinking...
