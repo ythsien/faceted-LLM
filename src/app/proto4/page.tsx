@@ -20,6 +20,7 @@ export default function Proto4Page() {
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Prototype 4 Specific State
   const [generatedFacets, setGeneratedFacets] = useState<Record<
@@ -45,13 +46,13 @@ export default function Proto4Page() {
 
   // Scroll to bottom
   useEffect(() => {
-    if (isChatting) {
+    if (isChatting && !isRegenerating) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage?.role === 'user' || isLoading) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, isLoading, isChatting]);
+  }, [messages, isLoading, isChatting, isRegenerating]);
 
   const generateFacets = async (promptText: string, attempts = 0) => {
     if (hasTriggeredFacets && attempts === 0) return;
@@ -104,6 +105,7 @@ export default function Proto4Page() {
     targetIndex?: number,
     attempts = 0
   ) => {
+    if (isRegeneration) setIsRegenerating(true);
     try {
       const apiMessages = currentMessages.map((m) => ({
         role: m.role,
@@ -180,6 +182,7 @@ export default function Proto4Page() {
       }
 
       setIsLoading(false);
+      setIsRegenerating(false);
 
       // After first turn completion, trigger facets
       if (!isRegeneration && currentMessages.length === 1) {
@@ -193,6 +196,7 @@ export default function Proto4Page() {
         { role: 'assistant', content: `Network Error: ${errorMessage}` },
       ]);
       setIsLoading(false);
+      setIsRegenerating(false);
     }
   };
 
@@ -430,13 +434,15 @@ export default function Proto4Page() {
                             <button
                               disabled={
                                 isLoading ||
-                                Object.keys(selectedFacets).length === 0
+                                Object.keys(selectedFacets).length === 0 ||
+                                JSON.stringify(selectedFacets) ===
+                                  JSON.stringify(msg.appliedFacets)
                               }
                               onClick={() => handleUpdateResponse(i)}
                               className="w-full py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:bg-gray-800 disabled:bg-gray-200 transition-colors cursor-pointer"
                             >
                               Update response
-                            </button>
+                            </button>{' '}
                           </div>
                         ) : null}
                       </div>

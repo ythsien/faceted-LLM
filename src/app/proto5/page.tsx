@@ -22,6 +22,7 @@ export default function Proto5Page() {
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Prototype 5 Specific State: Each assistant message can have its own selected facets
   const [selectedFacets, setSelectedFacets] = useState<Record<string, string>>(
@@ -41,13 +42,13 @@ export default function Proto5Page() {
 
   // Scroll to bottom
   useEffect(() => {
-    if (isChatting) {
+    if (isChatting && !isRegenerating) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage?.role === 'user' || isLoading) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, isLoading, isChatting]);
+  }, [messages, isLoading, isChatting, isRegenerating]);
 
   const generateFacets = async (
     msgIndex: number,
@@ -134,6 +135,7 @@ export default function Proto5Page() {
     targetIndex?: number,
     attempts = 0
   ) => {
+    if (isRegeneration) setIsRegenerating(true);
     try {
       const apiMessages = currentMessages.map((m) => ({
         role: m.role,
@@ -210,6 +212,7 @@ export default function Proto5Page() {
       }
 
       setIsLoading(false);
+      setIsRegenerating(false);
 
       // After completion, trigger facets for this TURN (multi-turn)
       setMessages((prev) => {
@@ -229,6 +232,7 @@ export default function Proto5Page() {
         { role: 'assistant', content: `Network Error: ${errorMessage}` },
       ]);
       setIsLoading(false);
+      setIsRegenerating(false);
     }
   };
 
@@ -465,7 +469,9 @@ export default function Proto5Page() {
                               <button
                                 disabled={
                                   isLoading ||
-                                  Object.keys(selectedFacets).length === 0
+                                  Object.keys(selectedFacets).length === 0 ||
+                                  JSON.stringify(selectedFacets) ===
+                                    JSON.stringify(msg.appliedFacets)
                                 }
                                 onClick={() => handleUpdateResponse(i)}
                                 className="w-full py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:bg-gray-800 disabled:bg-gray-200 transition-colors cursor-pointer"
