@@ -22,7 +22,6 @@ export default function Proto5Page() {
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Prototype 5 Specific State: Each assistant message can have its own selected facets
   const [selectedFacets, setSelectedFacets] = useState<Record<string, string>>(

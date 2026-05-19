@@ -20,7 +20,6 @@ export default function Proto4Page() {
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Prototype 4 Specific State
   const [generatedFacets, setGeneratedFacets] = useState<Record<
