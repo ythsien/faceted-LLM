@@ -26,15 +26,15 @@ export default function Proto0Page() {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [input]);
-
+  // Scroll to bottom
   useEffect(() => {
     if (isChatting) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'user' || isLoading) {
+      if (lastMessage?.role === 'user') {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, isLoading, isChatting]);
+  }, [messages, isChatting]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();

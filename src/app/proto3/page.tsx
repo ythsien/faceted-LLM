@@ -68,11 +68,11 @@ export default function Proto3Page() {
   useEffect(() => {
     if (isChatting) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'user' || isLoading) {
+      if (lastMessage?.role === 'user') {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, isLoading, isChatting]);
+  }, [messages, isChatting]);
 
   const clearStaggeredTimers = () => {
     staggeredTimersRef.current.forEach(clearTimeout);

@@ -56,15 +56,15 @@ export default function Proto1Page() {
   }, [input]);
 
   // Scroll to bottom when user sends a message or loading starts
+  // Scroll to bottom
   useEffect(() => {
     if (isChatting) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'user' || isLoading) {
+      if (lastMessage?.role === 'user') {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, isLoading, isChatting]);
-
+  }, [messages, isChatting]);
   const toggleFacet = (category: string, value: string) => {
     setSelectedFacets((prev) => {
       const newFacets = { ...prev };

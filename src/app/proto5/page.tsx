@@ -42,13 +42,13 @@ export default function Proto5Page() {
 
   // Scroll to bottom
   useEffect(() => {
-    if (isChatting && !isRegenerating) {
+    if (isChatting) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'user' || isLoading) {
+      if (lastMessage?.role === 'user') {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, isLoading, isChatting, isRegenerating]);
+  }, [messages, isChatting]);
 
   const generateFacets = async (
     msgIndex: number,
