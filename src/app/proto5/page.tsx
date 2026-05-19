@@ -134,7 +134,6 @@ export default function Proto5Page() {
     targetIndex?: number,
     attempts = 0
   ) => {
-    if (isRegeneration) setIsRegenerating(true);
     try {
       const apiMessages = currentMessages.map((m) => ({
         role: m.role,
@@ -211,7 +210,6 @@ export default function Proto5Page() {
       }
 
       setIsLoading(false);
-      setIsRegenerating(false);
 
       // After completion, trigger facets for this TURN (multi-turn)
       setMessages((prev) => {
@@ -231,7 +229,6 @@ export default function Proto5Page() {
         { role: 'assistant', content: `Network Error: ${errorMessage}` },
       ]);
       setIsLoading(false);
-      setIsRegenerating(false);
     }
   };
 

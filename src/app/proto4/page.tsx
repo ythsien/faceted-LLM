@@ -104,7 +104,6 @@ export default function Proto4Page() {
     targetIndex?: number,
     attempts = 0
   ) => {
-    if (isRegeneration) setIsRegenerating(true);
     try {
       const apiMessages = currentMessages.map((m) => ({
         role: m.role,
@@ -181,7 +180,6 @@ export default function Proto4Page() {
       }
 
       setIsLoading(false);
-      setIsRegenerating(false);
 
       // After first turn completion, trigger facets
       if (!isRegeneration && currentMessages.length === 1) {
@@ -195,7 +193,6 @@ export default function Proto4Page() {
         { role: 'assistant', content: `Network Error: ${errorMessage}` },
       ]);
       setIsLoading(false);
-      setIsRegenerating(false);
     }
   };
 
