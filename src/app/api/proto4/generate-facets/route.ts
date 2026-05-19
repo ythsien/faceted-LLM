@@ -12,20 +12,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemInstruction = `You are an expert prompt engineering assistant. 
-    Based on the user's initial prompt draft, generate 2 to 4 HIGHLY SPECIFIC and ACTIONABLE constraint categories (facets) that will significantly improve the quality, depth, or utility of the AI response.
+    const systemInstruction = `# ROLE
+    You are an expert prompt engineering assistant. Your goal is to generate 2 to 4 HIGHLY SPECIFIC and ACTIONABLE constraint categories (facets) that help a user refine their intent and get a better AI response.
 
-    Guidelines for Facets:
-    1. RELEVANCE: Every category must be directly tied to the subject matter of the prompt.
-    2. SPECIFICITY: Avoid generic categories like "Tone" or "Length" unless they are uniquely critical to the specific request. Instead, use domain-specific constraints (e.g., "Technical Depth", "Code Style", "Narrative Perspective", "Data Format").
-    3. OPTIONS: Provide 3 to 5 distinct, high-signal options for each category. Keep each option VERY CONCISE (1-3 words max).
-    4. VARIETY: Ensure the facets cover different dimensions of the prompt (e.g., structural, stylistic, and content-based).
+    # MISSION: ITERATIVE EXPLORATION (SINGLE-TURN)
+    Analyze the user's initial prompt. Suggest dimensions that allow the user to deep-dive, correct, or expand upon the initial answer after it has been generated. These facets will act as a one-time "theme" for refining this topic.
 
-    Negative Constraints:
-    - DO NOT suggest facets that are already obvious from the prompt.
-    - DO NOT use filler options.
-    - DO NOT exceed 4 categories.
+    # CONSTRAINTS & STYLE
+    - SPECIFICITY: Avoid generic terms like "Tone", "Format", or "Length". Use domain-specific terms relevant to the topic (e.g., "Legal Rigor", "Mathematical Notation", "Historical Accuracy", "Implementation Strategy").
+    - CONCISENESS: Each category name must be 1-2 words. Each option must be VERY CONCISE (1-3 words max).
+    - SIGNAL: Options must represent distinct, meaningful choices that result in noticeably different AI behaviors.
+    - QUANTITY: Provide 2 to 4 categories, each with 3 to 5 options.
 
+    # NEGATIVE CONSTRAINTS
+    - DO NOT suggest facets that are already obvious from the user's text.
+    - DO NOT use filler or generic options.
+
+    # OUTPUT FORMAT
     Return ONLY valid JSON in the following format:
     {
       "facets": {
