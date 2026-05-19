@@ -416,9 +416,9 @@ export default function Proto5Page() {
                       <div className="absolute right-full mr-8 top-0 hidden lg:block">
                         {msg.isGeneratingFacets ? (
                           <div className="w-[240px] bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-pulse">
-                            <div className="flex items-center gap-3">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                              <span className="text-[11px] font-bold text-black tracking-tight uppercase">
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                              <span className="text-[11px] font-bold text-gray-500 tracking-tight">
                                 Analyzing context...
                               </span>
                             </div>
