@@ -411,7 +411,9 @@ export default function Proto5Page() {
                       {msg.content}
                     </div>
                   ) : (
-                    <div className="w-full relative group">
+                    <div
+                      className={`w-full relative group ${msg.generatedFacets || msg.isGeneratingFacets ? 'min-h-[440px]' : ''}`}
+                    >
                       {/* Facet Refinement Panel - Always shows next to the corresponding response if available */}
                       <div className="absolute right-full mr-8 top-0 hidden lg:block">
                         {msg.isGeneratingFacets ? (

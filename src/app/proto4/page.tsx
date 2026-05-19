@@ -378,7 +378,9 @@ export default function Proto4Page() {
                       {msg.content}
                     </div>
                   ) : (
-                    <div className="w-full relative group">
+                    <div
+                      className={`w-full relative group ${generatedFacets || isGeneratingFacets ? 'min-h-[440px]' : ''}`}
+                    >
                       {/* Facet Refinement Panel - Positioned to the left of the max-w-3xl column */}
                       <div className="absolute right-full mr-8 top-0 hidden lg:block">
                         {isGeneratingFacets ? (
