@@ -8,7 +8,7 @@ This document serves as the master prompt plan and instruction set for building 
 - **Absolute Isolation:** Each prototype (0 through 5) MUST be built as a completely separate component/page/directory. Once a prototype is approved, its code must NOT be altered when working on subsequent prototypes.
 - **API Integration:** Use the Gemini API (gemini-3.1-flash-lite) with a securely stored private API key (e.g., via `.env`).
 - **Implicit Constraints:** In all faceted prototypes, selected values are _not_ visually appended to the user's raw text input in the UI. Instead, they are combined with the user's prompt under the hood before being sent to the Gemini API.
-- **Progressive Trigger Logic (Prototypes 2 & 3):** Do NOT use a strict character or word count to trigger facet generation. Instead, use **Debouncing** combined with a minimum length: Wait until the user has typed at least 3 words, and then trigger the API call only after they have _paused typing for 800 to 1000 milliseconds_.
+- **Progressive Trigger Logic (Prototypes 2 & 3):** Do NOT use a strict character or word count to trigger facet generation. Instead, use **Debouncing** combined with a minimum length: Wait until the user has typed at least 3 words, and then trigger the API call only after they have _paused typing for 400 to 800 milliseconds_.
 
 ---
 

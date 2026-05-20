@@ -170,7 +170,7 @@ export default function Proto2Page() {
     if (words.length > 3) {
       debounceTimerRef.current = setTimeout(() => {
         generateFacets(input);
-      }, 800);
+      }, 600);
     }
 
     return () => {
@@ -456,7 +456,7 @@ export default function Proto2Page() {
                         )}
                         <span className="text-sm font-semibold text-gray-500">
                           {isGeneratingFacets && visibleFacetKeys.length === 0
-                            ? 'Suggesting prompt enhancements...'
+                            ? 'Analyzing context...'
                             : 'Suggested prompt enhancements'}
                         </span>
                       </div>
