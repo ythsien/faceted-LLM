@@ -155,7 +155,15 @@ export default function Proto4Page() {
       const decoder = new TextDecoder();
 
       if (!isRegeneration) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '',
+            isEnhanced: Object.keys(selectedFacets).length > 0,
+            appliedFacets: { ...selectedFacets },
+          },
+        ]);
       }
 
       if (reader) {
@@ -205,10 +213,18 @@ export default function Proto4Page() {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    const constraints = Object.entries(selectedFacets)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+
+    const apiContent = constraints
+      ? `[SYSTEM: STRICTLY ADHERE to these constraints: ${constraints}]\n\nOriginal prompt: ${input}`
+      : input;
+
     const displayMessage: Message = {
       role: 'user',
       content: input,
-      apiContent: input,
+      apiContent: apiContent,
     };
 
     const newMessages = [...messages, displayMessage];
@@ -217,9 +233,6 @@ export default function Proto4Page() {
     setIsChatting(true);
     setIsLoading(true);
     setIsFocused(false);
-
-    // Clear selections for the upcoming response
-    setSelectedFacets({});
 
     await performChat(newMessages);
   };
