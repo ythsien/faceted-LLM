@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTelemetryTracker } from '@/utils/telemetry';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -28,6 +29,15 @@ export default function Proto1Page() {
     {}
   );
   const [isFacetPanelOpen, setIsFacetPanelOpen] = useState(false);
+
+  const {
+    onKeystroke,
+    onInputFocus,
+    onFacetClick,
+    onSubmitStart,
+    onRenderComplete,
+    onReset,
+  } = useTelemetryTracker('proto1');
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -66,6 +76,7 @@ export default function Proto1Page() {
     }
   }, [messages, isChatting]);
   const toggleFacet = (category: string, value: string) => {
+    onFacetClick();
     setSelectedFacets((prev) => {
       const newFacets = { ...prev };
       if (newFacets[category] === value) {
@@ -102,6 +113,7 @@ export default function Proto1Page() {
     setIsLoading(true);
     setIsFacetPanelOpen(false);
 
+    onSubmitStart();
     await performChat(newMessages);
   };
 
@@ -161,6 +173,15 @@ export default function Proto1Page() {
           });
         }
       }
+
+      setIsLoading(false);
+
+      const lastUserMsg = currentMessages
+        .filter((m) => m.role === 'user')
+        .slice(-1)[0];
+      const lastUserPrompt = lastUserMsg?.content || null;
+      const appliedFacets = lastUserMsg?.facets || null;
+      onRenderComplete(lastUserPrompt, null, appliedFacets);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -206,6 +227,7 @@ export default function Proto1Page() {
     setIsLoading(false);
     setSelectedFacets({});
     setIsFacetPanelOpen(false);
+    onReset();
   };
 
   return (
@@ -257,7 +279,11 @@ export default function Proto1Page() {
                   <textarea
                     ref={textareaRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      onKeystroke();
+                    }}
+                    onFocus={() => onInputFocus()}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask anything"
                     className="w-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 ring-0 text-[18px] resize-none shadow-none appearance-none placeholder-gray-400 cursor-text"
@@ -299,7 +325,7 @@ export default function Proto1Page() {
                     className={`max-w-[90%] rounded-[24px] text-[16px] leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[#F2F2F2] text-black px-5 py-3 whitespace-pre-wrap'
-                        : 'text-black prose prose-slate max-w-none prose-p:my-0 [&_li_p]:mb-0'
+                        : 'text-black prose prose-slate max-w-none [&_p]:mb-4 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_li_p]:mb-0'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -424,8 +450,14 @@ export default function Proto1Page() {
                       <textarea
                         ref={textareaRef}
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onFocus={() => setIsFacetPanelOpen(true)}
+                        onChange={(e) => {
+                          setInput(e.target.value);
+                          onKeystroke();
+                        }}
+                        onFocus={() => {
+                          setIsFacetPanelOpen(true);
+                          onInputFocus();
+                        }}
                         onKeyDown={handleKeyDown}
                         placeholder="Ask anything"
                         rows={1}

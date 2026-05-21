@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
+import { useTelemetryTracker } from '@/utils/telemetry';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,6 +20,15 @@ export default function Proto2Page() {
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  const {
+    onKeystroke,
+    onInputFocus,
+    onFacetClick,
+    onSubmitStart,
+    onRenderComplete,
+    onReset,
+  } = useTelemetryTracker('proto2');
 
   // Prototype 2 Specific State
   const [generatedFacets, setGeneratedFacets] = useState<Record<
@@ -184,6 +194,7 @@ export default function Proto2Page() {
     const prevInput = input;
     setInput(val);
     setLastTypingTime(Date.now());
+    onKeystroke();
 
     if (val.length === 0) {
       setShowLoadingState(false);
@@ -207,6 +218,7 @@ export default function Proto2Page() {
   };
 
   const toggleFacet = (category: string, value: string) => {
+    onFacetClick();
     setSelectedFacets((prev) => {
       const newFacets = { ...prev };
       if (newFacets[category] === value) {
@@ -247,6 +259,7 @@ export default function Proto2Page() {
     setIsLoading(true);
     setIsFocused(false);
 
+    onSubmitStart();
     await performChat(newMessages);
   };
 
@@ -306,6 +319,15 @@ export default function Proto2Page() {
           });
         }
       }
+
+      setIsLoading(false);
+
+      const lastUserMsg = currentMessages
+        .filter((m) => m.role === 'user')
+        .slice(-1)[0];
+      const lastUserPrompt = lastUserMsg?.content || null;
+      const appliedFacets = lastUserMsg?.facets || null;
+      onRenderComplete(lastUserPrompt, generatedFacets, appliedFacets);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -360,6 +382,7 @@ export default function Proto2Page() {
     setIsFocused(false);
     clearStaggeredTimers();
     if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    onReset();
   };
 
   return (
@@ -402,7 +425,10 @@ export default function Proto2Page() {
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => handleInputChange(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
+                  onFocus={() => {
+                    setIsFocused(true);
+                    onInputFocus();
+                  }}
                   onBlur={() => setIsFocused(false)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything"
@@ -520,7 +546,7 @@ export default function Proto2Page() {
                     className={`max-w-[90%] rounded-[24px] text-[16px] leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[#F2F2F2] text-black px-5 py-3 whitespace-pre-wrap'
-                        : 'text-black prose prose-slate max-w-none prose-p:my-0 [&_li_p]:mb-0'
+                        : 'text-black prose prose-slate max-w-none [&_p]:mb-4 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_li_p]:mb-0'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -612,7 +638,10 @@ export default function Proto2Page() {
                       ref={textareaRef}
                       value={input}
                       onChange={(e) => handleInputChange(e.target.value)}
-                      onFocus={() => setIsFocused(true)}
+                      onFocus={() => {
+                        setIsFocused(true);
+                        onInputFocus();
+                      }}
                       onKeyDown={handleKeyDown}
                       placeholder="Ask anything"
                       rows={1}

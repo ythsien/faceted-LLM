@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTelemetryTracker } from '@/utils/telemetry';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -16,6 +17,14 @@ export default function Proto0Page() {
   const [isChatting, setIsChatting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  const {
+    onKeystroke,
+    onInputFocus,
+    onSubmitStart,
+    onRenderComplete,
+    onReset,
+  } = useTelemetryTracker('proto0');
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,6 +58,7 @@ export default function Proto0Page() {
     setIsLoading(true);
     setIsFocused(false);
 
+    onSubmitStart();
     await performChat(newMessages);
   };
 
@@ -103,6 +113,13 @@ export default function Proto0Page() {
           });
         }
       }
+
+      setIsLoading(false);
+
+      const lastUserPrompt =
+        currentMessages.filter((m) => m.role === 'user').slice(-1)[0]
+          ?.content || null;
+      onRenderComplete(lastUserPrompt);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -147,6 +164,7 @@ export default function Proto0Page() {
     setInput('');
     setIsLoading(false);
     setIsFocused(false);
+    onReset();
   };
 
   return (
@@ -192,6 +210,8 @@ export default function Proto0Page() {
                 isLoading={isLoading}
                 isFocused={isFocused}
                 setIsFocused={setIsFocused}
+                onKeystroke={onKeystroke}
+                onInputFocus={onInputFocus}
               />
             </div>
           </div>
@@ -207,7 +227,7 @@ export default function Proto0Page() {
                     className={`max-w-[90%] rounded-[24px] text-[16px] leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[#F2F2F2] text-black whitespace-pre-wrap px-5 py-3'
-                        : 'text-black prose prose-slate max-w-none prose-p:my-0 [&_li_p]:mb-0'
+                        : 'text-black prose prose-slate max-w-none [&_p]:mb-4 [&_p]:mt-0 [&_p:last-child]:mb-0 [&_li_p]:mb-0'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -297,6 +317,8 @@ export default function Proto0Page() {
                   isLoading={isLoading}
                   isFocused={isFocused}
                   setIsFocused={setIsFocused}
+                  onKeystroke={onKeystroke}
+                  onInputFocus={onInputFocus}
                 />
               </div>
             </div>
@@ -316,6 +338,8 @@ interface PromptBoxProps {
   isLoading: boolean;
   isFocused: boolean;
   setIsFocused: (val: boolean) => void;
+  onKeystroke: () => void;
+  onInputFocus: () => void;
 }
 
 function PromptBox({
@@ -327,6 +351,8 @@ function PromptBox({
   isLoading,
   isFocused,
   setIsFocused,
+  onKeystroke,
+  onInputFocus,
 }: PromptBoxProps) {
   return (
     <div className="relative w-full bg-white border border-gray-200 rounded-[28px] shadow-sm transition-all duration-300 ease-in-out hover:border-gray-300">
@@ -334,8 +360,14 @@ function PromptBox({
         <textarea
           ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onFocus={() => setIsFocused(true)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            onKeystroke();
+          }}
+          onFocus={() => {
+            setIsFocused(true);
+            onInputFocus();
+          }}
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           placeholder="Ask anything"
