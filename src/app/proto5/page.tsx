@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
 import { useTelemetryTracker } from '@/utils/telemetry';
+import { useNaturalSticky } from '@/utils/useNaturalSticky';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -50,6 +51,18 @@ export default function Proto5Page() {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const latestMessageRef = useRef<HTMLDivElement>(null);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  // Drive premium Dual-Anchor Sticky Scrolling behaviour
+  const stickyStyle = useNaturalSticky(
+    mainScrollRef,
+    panelRef,
+    [messages],
+    12, // topOffset matching top-12
+    48 // bottomOffset
+  );
 
   // Auto-expand textarea
   useEffect(() => {
@@ -403,7 +416,10 @@ export default function Proto5Page() {
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto relative flex flex-col z-0">
+      <main
+        ref={mainScrollRef}
+        className="flex-1 overflow-y-auto relative flex flex-col z-0"
+      >
         {!isChatting ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6">
             <h1 className="text-4xl font-bold text-black opacity-80 mb-12 text-center animate-in fade-in duration-1000">
@@ -470,6 +486,7 @@ export default function Proto5Page() {
                     </div>
                   ) : (
                     <div
+                      ref={i === lastAssistantIndex ? latestMessageRef : null}
                       className={`w-full relative group ${i === lastAssistantIndex && (msg.generatedFacets || msg.isGeneratingFacets) ? 'lg:min-h-[440px]' : ''}`}
                     >
                       {/* Assistant Response Header & Body */}
@@ -561,90 +578,96 @@ export default function Proto5Page() {
 
                       {/* Facet Refinement Panel - Positioned next to response on desktop, below on mobile */}
                       {i === lastAssistantIndex && (
-                        <div className="lg:absolute lg:right-full lg:mr-8 lg:top-0 w-full lg:w-[240px] mt-6 lg:mt-0">
-                          {msg.isGeneratingFacets ? (
-                            <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-pulse">
-                              <div className="flex items-center gap-2">
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
-                                <span className="text-[11px] font-bold text-gray-500 tracking-tight">
-                                  Analyzing context...
-                                </span>
-                              </div>
-                              <div className="flex flex-col gap-4">
-                                <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
-                                <div className="flex gap-1.5">
-                                  <div className="h-6 bg-gray-200 rounded-xl w-16"></div>
-                                  <div className="h-6 bg-gray-200 rounded-xl w-20"></div>
+                        <div className="lg:absolute lg:right-full lg:mr-8 lg:top-0 lg:bottom-0 lg:h-full w-full lg:w-[240px] mt-6 lg:mt-0 pointer-events-none">
+                          <div
+                            ref={panelRef}
+                            className="w-full pointer-events-auto lg:py-4"
+                            style={stickyStyle}
+                          >
+                            {msg.isGeneratingFacets ? (
+                              <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-pulse">
+                                <div className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                                  <span className="text-[11px] font-bold text-gray-500 tracking-tight">
+                                    Analyzing context...
+                                  </span>
                                 </div>
-                                <div className="h-3 bg-gray-200 rounded-full w-2/3"></div>
-                                <div className="flex gap-1.5">
-                                  <div className="h-6 bg-gray-200 rounded-xl w-24"></div>
-                                  <div className="h-6 bg-gray-200 rounded-xl w-14"></div>
+                                <div className="flex flex-col gap-4">
+                                  <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
+                                  <div className="flex gap-1.5">
+                                    <div className="h-6 bg-gray-200 rounded-xl w-16"></div>
+                                    <div className="h-6 bg-gray-200 rounded-xl w-20"></div>
+                                  </div>
+                                  <div className="h-3 bg-gray-200 rounded-full w-2/3"></div>
+                                  <div className="flex gap-1.5">
+                                    <div className="h-6 bg-gray-200 rounded-xl w-24"></div>
+                                    <div className="h-6 bg-gray-200 rounded-xl w-14"></div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ) : msg.generatedFacets ? (
-                            <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-700">
-                              <div className="flex items-center gap-2">
-                                <Image
-                                  src="/AI.png"
-                                  alt="AI Icon"
-                                  width={14}
-                                  height={14}
-                                  className="opacity-70"
-                                />
-                                <span className="text-[11px] font-bold text-gray-500 tracking-tight">
-                                  Suggested enhancements
-                                </span>
-                              </div>
-                              <div className="flex flex-col gap-5">
-                                {Object.entries(msg.generatedFacets).map(
-                                  ([key, options]) => (
-                                    <div
-                                      key={key}
-                                      className="flex flex-col gap-2"
-                                    >
-                                      <div className="text-[11px] font-bold text-gray-500">
-                                        {key.charAt(0).toUpperCase() +
-                                          key.slice(1).toLowerCase()}
+                            ) : msg.generatedFacets ? (
+                              <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-700">
+                                <div className="flex items-center gap-2">
+                                  <Image
+                                    src="/AI.png"
+                                    alt="AI Icon"
+                                    width={14}
+                                    height={14}
+                                    className="opacity-70"
+                                  />
+                                  <span className="text-[11px] font-bold text-gray-500 tracking-tight">
+                                    Suggested enhancements
+                                  </span>
+                                </div>
+                                <div className="flex flex-col gap-5">
+                                  {Object.entries(msg.generatedFacets).map(
+                                    ([key, options]) => (
+                                      <div
+                                        key={key}
+                                        className="flex flex-col gap-2"
+                                      >
+                                        <div className="text-[11px] font-bold text-gray-500">
+                                          {key.charAt(0).toUpperCase() +
+                                            key.slice(1).toLowerCase()}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {options.map((option) => (
+                                            <button
+                                              key={option}
+                                              onClick={() =>
+                                                toggleFacet(key, option)
+                                              }
+                                              className={`px-3 py-1.5 rounded-xl text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
+                                                selectedFacets[key] === option
+                                                  ? 'bg-black border-black text-white shadow-md'
+                                                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
+                                              }`}
+                                            >
+                                              {option}
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {options.map((option) => (
-                                          <button
-                                            key={option}
-                                            onClick={() =>
-                                              toggleFacet(key, option)
-                                            }
-                                            className={`px-3 py-1.5 rounded-xl text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
-                                              selectedFacets[key] === option
-                                                ? 'bg-black border-black text-white shadow-md'
-                                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
-                                            }`}
-                                          >
-                                            {option}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )
-                                )}
+                                    )
+                                  )}
+                                </div>
+                                {/* Show "Update response" for all assistant messages but disable for previous turns */}
+                                <button
+                                  disabled={
+                                    isLoading ||
+                                    i !== messages.length - 1 ||
+                                    Object.keys(selectedFacets).length === 0 ||
+                                    JSON.stringify(selectedFacets) ===
+                                      JSON.stringify(msg.appliedFacets)
+                                  }
+                                  onClick={() => handleUpdateResponse(i)}
+                                  className="w-full py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:bg-gray-800 disabled:bg-gray-200 transition-colors cursor-pointer"
+                                >
+                                  Update response
+                                </button>{' '}
                               </div>
-                              {/* Show "Update response" for all assistant messages but disable for previous turns */}
-                              <button
-                                disabled={
-                                  isLoading ||
-                                  i !== messages.length - 1 ||
-                                  Object.keys(selectedFacets).length === 0 ||
-                                  JSON.stringify(selectedFacets) ===
-                                    JSON.stringify(msg.appliedFacets)
-                                }
-                                onClick={() => handleUpdateResponse(i)}
-                                className="w-full py-2 bg-black text-white text-[11px] font-bold rounded-xl hover:bg-gray-800 disabled:bg-gray-200 transition-colors cursor-pointer"
-                              >
-                                Update response
-                              </button>{' '}
-                            </div>
-                          ) : null}
+                            ) : null}
+                          </div>
                         </div>
                       )}
                     </div>
