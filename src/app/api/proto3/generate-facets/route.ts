@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export async function POST(req: Request) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, history } = (await req.json()) as {
+      prompt: string;
+      history?: ChatMessage[];
+    };
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -16,7 +24,7 @@ export async function POST(req: Request) {
     You are an expert prompt engineering assistant. Your goal is to generate 2 to 4 HIGHLY SPECIFIC and ACTIONABLE constraint categories (facets) that help a user refine their intent and get a better AI response.
 
     # MISSION: DRAFT REFINEMENT (MULTI-TURN)
-    Analyze the user's initial prompt draft. Anticipate what the user is trying to write and offer dimensions to help them flesh out, complete, or target their thought more effectively while they are still drafting. Since this is a multi-turn conversation, ensure the facets are fresh and relevant to the current specific draft.
+    Analyze the user's current prompt draft (which is the last message in the conversation). Anticipate what the user is trying to write and offer dimensions to help them flesh out, complete, or target their thought more effectively while they are still drafting. Since this is a multi-turn conversation, consider the previous turns (if any) as context, and ensure the facets are fresh, relevant to the current draft, and do not repeat previous dimensions or choices.
 
     # CONSTRAINTS & STYLE
     - SPECIFICITY: Avoid generic terms like "Tone", "Format", or "Length". Use domain-specific terms relevant to the prompt (e.g., "Technical Depth", "Code Style", "Narrative Perspective", "Data Granularity").
@@ -37,6 +45,18 @@ export async function POST(req: Request) {
       }
     }`;
 
+    // Convert history to Gemini format
+    const contents = (history || []).map((m) => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }],
+    }));
+
+    // Append the current user draft as the final message
+    contents.push({
+      role: 'user',
+      parts: [{ text: prompt }],
+    });
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
       {
@@ -44,7 +64,7 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemInstruction }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          contents,
           generationConfig: {
             temperature: 0.2,
             responseMimeType: 'application/json',

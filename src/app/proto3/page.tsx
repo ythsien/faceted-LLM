@@ -130,7 +130,13 @@ export default function Proto3Page() {
         const res = await fetch('/api/proto3/generate-facets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptText }),
+          body: JSON.stringify({
+            prompt: promptText,
+            history: messages.map((m) => ({
+              role: m.role,
+              content: m.apiContent || m.content,
+            })),
+          }),
         });
 
         if (!res.ok) {
@@ -164,7 +170,7 @@ export default function Proto3Page() {
         setIsGeneratingFacets(false);
       }
     },
-    [selectedFacets, lastTypingTime, generatedFacets]
+    [selectedFacets, lastTypingTime, generatedFacets, messages]
   );
 
   // Debounce logic for Progressive Trigger
