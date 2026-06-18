@@ -145,7 +145,7 @@ export default function StartPage() {
 
   // Prototype List View (Active State)
   return (
-    <div className="bg-white min-h-screen w-full relative flex flex-col items-center pt-[80px] pb-[80px] font-manrope">
+    <div className="bg-white min-h-screen w-full relative flex flex-col items-center pt-[80px] pb-[80px] font-manrope text-black">
       {/* Sleek Participant Badge & Change Handler */}
       <div className="absolute top-4 right-4 flex items-center gap-3 bg-neutral-50 border border-neutral-200/60 px-4 py-2 rounded-full shadow-sm text-sm">
         <span className="text-neutral-500 font-medium">

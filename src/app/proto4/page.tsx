@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
 import { useTelemetryTracker } from '@/utils/telemetry';
 import { useNaturalSticky } from '@/utils/useNaturalSticky';
+import TaskReminder from '@/components/TaskReminder';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -428,6 +429,7 @@ export default function Proto4Page() {
                 </div>
               </form>
             </div>
+            <TaskReminder />
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-x-hidden">
@@ -542,7 +544,7 @@ export default function Proto4Page() {
                             style={stickyStyle}
                           >
                             {isGeneratingFacets ? (
-                              <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-pulse">
+                              <div className="w-full bg-gray-100 rounded-2xl border border-gray-200 p-5 flex flex-col gap-6 animate-pulse">
                                 <div className="flex items-center gap-2">
                                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
                                   <span className="text-[11px] font-bold text-gray-500 tracking-tight">
@@ -563,7 +565,7 @@ export default function Proto4Page() {
                                 </div>
                               </div>
                             ) : generatedFacets ? (
-                              <div className="w-full bg-gray-50/50 rounded-2xl border border-gray-100 p-5 flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-700">
+                              <div className="w-full bg-gray-100 rounded-2xl border border-gray-200 p-5 flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-700">
                                 <div className="flex items-center gap-2">
                                   <Image
                                     src="/AI.png"

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTelemetryTracker } from '@/utils/telemetry';
+import TaskReminder from '@/components/TaskReminder';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -168,7 +169,7 @@ export default function Proto0Page() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white font-manrope relative">
+    <div className="flex flex-col h-screen bg-white font-manrope relative text-black">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -214,6 +215,7 @@ export default function Proto0Page() {
                 onInputFocus={onInputFocus}
               />
             </div>
+            <TaskReminder />
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-x-hidden">

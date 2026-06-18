@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTelemetryTracker } from '@/utils/telemetry';
+import TaskReminder from '@/components/TaskReminder';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -75,6 +76,15 @@ export default function Proto1Page() {
       }
     }
   }, [messages, isChatting]);
+
+  useEffect(() => {
+    if (isFacetPanelOpen) {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isFacetPanelOpen]);
   const toggleFacet = (category: string, value: string) => {
     onFacetClick();
     setSelectedFacets((prev) => {
@@ -231,7 +241,7 @@ export default function Proto1Page() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white font-manrope relative">
+    <div className="flex flex-col h-screen bg-white font-manrope relative text-black">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -264,7 +274,7 @@ export default function Proto1Page() {
               What&apos;s on your mind?
             </h1>
 
-            <div className="w-full max-w-5xl bg-white border border-gray-200 rounded-[24px] shadow-sm flex overflow-hidden min-h-[500px]">
+            <div className="w-full max-w-4xl bg-white border border-gray-200 rounded-[24px] shadow-sm flex overflow-hidden min-h-[500px]">
               <div className="w-1/3 border-r border-gray-100 p-6 overflow-y-auto bg-gray-50/30">
                 <FacetPanel
                   selectedFacets={selectedFacets}
@@ -286,7 +296,7 @@ export default function Proto1Page() {
                     onFocus={() => onInputFocus()}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask anything"
-                    className="w-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 ring-0 text-[18px] resize-none shadow-none appearance-none placeholder-gray-400 cursor-text"
+                    className="w-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 ring-0 text-[16px] resize-none shadow-none appearance-none placeholder-gray-400 cursor-text"
                   />
                   <div className="flex justify-end mt-4">
                     <button
@@ -312,10 +322,13 @@ export default function Proto1Page() {
                 </form>
               </div>
             </div>
+            <TaskReminder />
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-x-hidden">
-            <div className="max-w-3xl w-full mx-auto p-6 space-y-8 pb-64">
+            <div
+              className={`max-w-3xl w-full mx-auto p-6 space-y-8 transition-all duration-300 ${isFacetPanelOpen ? 'pb-[520px]' : 'pb-32'}`}
+            >
               {messages.map((msg, i) => (
                 <div
                   key={i}
@@ -463,7 +476,7 @@ export default function Proto1Page() {
                         rows={1}
                         className={`flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 ring-0 resize-none shadow-none appearance-none transition-all duration-300 text-left ${
                           isFacetPanelOpen
-                            ? 'text-[18px] p-4 cursor-text'
+                            ? 'text-[16px] p-4 cursor-text'
                             : 'text-[16px] py-3 px-4 cursor-pointer'
                         }`}
                         style={{ height: 'auto', minHeight: '48px' }}

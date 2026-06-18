@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
 import { useTelemetryTracker } from '@/utils/telemetry';
+import TaskReminder from '@/components/TaskReminder';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -85,6 +86,15 @@ export default function Proto2Page() {
       }
     }
   }, [messages, isChatting]);
+
+  useEffect(() => {
+    if (isFocused && generatedFacets) {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isFocused, generatedFacets]);
   const clearStaggeredTimers = () => {
     staggeredTimersRef.current.forEach(clearTimeout);
     staggeredTimersRef.current = [];
@@ -108,7 +118,7 @@ export default function Proto2Page() {
                 return current;
               });
             },
-            (index + 1) * 500
+            (index + 1) * 150
           );
 
           staggeredTimersRef.current.push(timer);
@@ -177,7 +187,7 @@ export default function Proto2Page() {
       .trim()
       .split(/\s+/)
       .filter((w) => w.length > 0);
-    if (words.length > 3) {
+    if (words.length >= 3) {
       debounceTimerRef.current = setTimeout(() => {
         generateFacets(input);
       }, 600);
@@ -191,13 +201,25 @@ export default function Proto2Page() {
   }, [input, isChatting, hasStartedChat, generateFacets]);
 
   const handleInputChange = (val: string) => {
-    const prevInput = input;
     setInput(val);
     setLastTypingTime(Date.now());
     onKeystroke();
 
-    if (val.length === 0) {
+    if (hasStartedChat) {
+      // During conversation, we do not regenerate or clear facets based on typing length
+      return;
+    }
+
+    const words = val
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+
+    if (words.length === 0) {
       setShowLoadingState(false);
+      setIsGeneratingFacets(false);
+      setVisibleFacetKeys([]);
+      setGeneratedFacets(null);
       if (loadingTimerRef.current) {
         clearTimeout(loadingTimerRef.current);
         loadingTimerRef.current = null;
@@ -205,15 +227,15 @@ export default function Proto2Page() {
       return;
     }
 
-    // Trigger loading state immediately when user starts typing
-    if (
-      !hasStartedChat &&
-      !showLoadingState &&
-      val.length > 0 &&
-      prevInput.length === 0
-    ) {
+    // Trigger loading state only when word count reaches at least 3 words
+    if (!hasStartedChat && words.length >= 3 && !showLoadingState) {
       setShowLoadingState(true);
-      setIsGeneratingFacets(true); // Start the spinner immediately
+      setIsGeneratingFacets(true);
+    } else if (words.length < 3) {
+      setShowLoadingState(false);
+      setIsGeneratingFacets(false);
+      setVisibleFacetKeys([]);
+      setGeneratedFacets(null);
     }
   };
 
@@ -386,7 +408,7 @@ export default function Proto2Page() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white font-manrope relative overflow-hidden">
+    <div className="flex flex-col h-screen bg-white font-manrope relative overflow-hidden text-black">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -414,7 +436,7 @@ export default function Proto2Page() {
 
       <main className="flex-1 overflow-y-auto relative flex flex-col z-0">
         {!isChatting ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="flex-1 flex flex-col items-center justify-start pt-[20vh] p-6">
             <h1 className="text-4xl font-bold text-black opacity-80 mb-12 text-center animate-in fade-in duration-1000">
               What&apos;s on your mind?
             </h1>
@@ -503,7 +525,7 @@ export default function Proto2Page() {
                             return (
                               <div
                                 key={key}
-                                className="grid grid-cols-[120px_1fr] gap-4 items-start px-2 animate-in fade-in slide-in-from-bottom-3 duration-1000 ease-out"
+                                className="grid grid-cols-[120px_1fr] gap-4 items-start px-2 animate-fade-in-up"
                               >
                                 <div className="text-[13px] font-semibold text-gray-500 pt-1.5">
                                   {key}
@@ -533,10 +555,13 @@ export default function Proto2Page() {
                 </div>
               </form>
             </div>
+            <TaskReminder />
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-x-hidden">
-            <div className="max-w-3xl w-full mx-auto p-6 space-y-8 pb-48">
+            <div
+              className={`max-w-3xl w-full mx-auto p-6 space-y-8 transition-all duration-300 ${isFocused && generatedFacets ? 'pb-[450px]' : 'pb-32'}`}
+            >
               {messages.map((msg, i) => (
                 <div
                   key={i}
@@ -629,11 +654,65 @@ export default function Proto2Page() {
                 className="w-full max-w-3xl flex flex-col gap-3 pointer-events-auto"
                 ref={inputContainerRef}
               >
-                <div className="bg-white border border-gray-200 rounded-[28px] shadow-lg flex overflow-hidden">
+                <div className="bg-white border border-gray-200 rounded-[28px] shadow-lg flex flex-col overflow-hidden">
                   <form
                     onSubmit={handleSubmit}
                     className="flex-1 flex flex-col p-2"
                   >
+                    <div
+                      className={`transition-all duration-700 ease-in-out overflow-hidden ${isFocused ? (generatedFacets ? 'max-h-[500px] opacity-100 border-b border-gray-200 pb-3 mb-2' : 'max-h-0 opacity-0 pointer-events-none') : 'max-h-0 opacity-0 pointer-events-none'}`}
+                    >
+                      <div className="px-3 pb-5 pt-5 flex flex-col gap-6">
+                        <div className="flex items-center justify-between px-2">
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src="/AI.png"
+                              alt="AI Icon"
+                              width={16}
+                              height={16}
+                              className="opacity-70"
+                            />
+                            <span className="text-sm font-semibold text-gray-500">
+                              Suggested prompt enhancements
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-6">
+                          {generatedFacets &&
+                            Object.keys(generatedFacets).map((key) => {
+                              const options = generatedFacets[key];
+                              if (!options) return null;
+                              return (
+                                <div
+                                  key={key}
+                                  className="grid grid-cols-[120px_1fr] gap-4 items-start px-2 animate-fade-in-up"
+                                >
+                                  <div className="text-[13px] font-semibold text-gray-500 pt-1.5">
+                                    {key}
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {options.map((option) => (
+                                      <button
+                                        key={option}
+                                        type="button"
+                                        onClick={() => toggleFacet(key, option)}
+                                        className={`px-4 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 cursor-pointer ${
+                                          selectedFacets[key] === option
+                                            ? 'bg-black border-black text-white shadow-md'
+                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {option}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+
                     <textarea
                       ref={textareaRef}
                       value={input}
@@ -673,60 +752,6 @@ export default function Proto2Page() {
                           <path d="M12 19V5" />
                         </svg>
                       </button>
-                    </div>
-
-                    <div
-                      className={`transition-all duration-700 ease-in-out overflow-hidden ${isFocused ? (generatedFacets ? 'max-h-[500px] opacity-100 border-t border-gray-200 mt-2' : 'max-h-0 opacity-0') : 'max-h-0 opacity-0'}`}
-                    >
-                      <div className="px-3 pb-5 pt-5 flex flex-col gap-6">
-                        <div className="flex items-center justify-between px-2">
-                          <div className="flex items-center gap-2">
-                            <Image
-                              src="/AI.png"
-                              alt="AI Icon"
-                              width={16}
-                              height={16}
-                              className="opacity-70"
-                            />
-                            <span className="text-sm font-semibold text-gray-500">
-                              Suggested prompt enhancements
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-6">
-                          {generatedFacets &&
-                            Object.keys(generatedFacets).map((key) => {
-                              const options = generatedFacets[key];
-                              if (!options) return null;
-                              return (
-                                <div
-                                  key={key}
-                                  className="grid grid-cols-[120px_1fr] gap-4 items-start px-2"
-                                >
-                                  <div className="text-[13px] font-semibold text-gray-500 pt-1.5">
-                                    {key}
-                                  </div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {options.map((option) => (
-                                      <button
-                                        key={option}
-                                        type="button"
-                                        onClick={() => toggleFacet(key, option)}
-                                        className={`px-4 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 cursor-pointer ${
-                                          selectedFacets[key] === option
-                                            ? 'bg-black border-black text-white shadow-md'
-                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        {option}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </div>
                     </div>
                   </form>
                 </div>
